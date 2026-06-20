@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://athena.dev/wtw/commitment.schema.json",
+  "title": "WaferToWatt commitment edge",
+  "type": "object",
+  "required": [
+    "edge_id",
+    "quarter",
+    "from_entity",
+    "to_entity",
+    "flow_kind",
+    "quantity",
+    "quantity_unit",
+    "confidence_low",
+    "confidence_high",
+    "evidence_url",
+    "evidence_timestamp",
+    "inferred",
+    "extraction_mode"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "edge_id": {"type": "string"},
+    "quarter": {"type": "string", "pattern": "^\\d{4}q[1-4]$"},
+    "from_entity": {"type": "string"},
+    "to_entity": {"type": "string"},
+    "flow_kind": {
+      "type": "string",
+      "enum": ["accelerator_commit", "cowos_share", "hbm_stacks", "wafer_start"]
+    },
+    "quantity": {"type": "number", "minimum": 0},
+    "quantity_unit": {"type": "string"},
+    "confidence_low": {"type": "number", "minimum": 0, "maximum": 1},
+    "confidence_high": {"type": "number", "minimum": 0, "maximum": 1},
+    "evidence_url": {"type": "string", "format": "uri"},
+    "evidence_timestamp": {"type": "string"},
+    "inferred": {"type": "boolean"},
+    "extraction_mode": {"type": "string", "enum": ["fixture", "live"]}
+  }
+}
+
