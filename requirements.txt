@@ -1,4 +1,7 @@
 # Streamlit Community Cloud reads this file. The app (streamlit_app.py) reads the
-# committed data/snapshots/*.jsonl directly, so it only needs streamlit. The CLI/
-# package under src/wtw/ has its own deps in pyproject.toml.
+# committed data/snapshots/*.jsonl directly AND drives the real wtw engine
+# (parser + gate) on user-pasted 8-K text, so it needs both streamlit and the
+# package itself. The `.` installs src/wtw/ so `from wtw...` imports resolve on
+# Streamlit Cloud (the app also adds src/ to sys.path as a belt-and-braces).
 streamlit>=1.40
+.

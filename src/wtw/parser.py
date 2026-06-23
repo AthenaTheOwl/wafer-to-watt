@@ -38,15 +38,27 @@ PATTERN = re.compile(
 )
 
 
-def paragraphs_from_html(path: Path) -> list[str]:
+def paragraphs_from_text(html: str) -> list[str]:
     parser = ParagraphParser()
-    parser.feed(path.read_text(encoding="utf-8"))
+    parser.feed(html)
     return parser.paragraphs
 
 
-def parse_commitments(path: Path, quarter: str, evidence_url: str) -> list[CommitmentEdge]:
+def paragraphs_from_html(path: Path) -> list[str]:
+    return paragraphs_from_text(path.read_text(encoding="utf-8"))
+
+
+def parse_paragraphs(
+    paragraphs: list[str], quarter: str, evidence_url: str
+) -> list[CommitmentEdge]:
+    """Extract commitment edges from already-split 8-K paragraphs.
+
+    This is the real extraction engine: same regex, flow-kind, confidence, and
+    inferred-flag logic the build pipeline runs. Both the file-based
+    parse_commitments and the live Streamlit form drive this.
+    """
     edges: list[CommitmentEdge] = []
-    for index, paragraph in enumerate(paragraphs_from_html(path), start=1):
+    for index, paragraph in enumerate(paragraphs, start=1):
         match = PATTERN.search(paragraph)
         if not match:
             continue
@@ -75,3 +87,7 @@ def parse_commitments(path: Path, quarter: str, evidence_url: str) -> list[Commi
             )
         )
     return edges
+
+
+def parse_commitments(path: Path, quarter: str, evidence_url: str) -> list[CommitmentEdge]:
+    return parse_paragraphs(paragraphs_from_html(path), quarter, evidence_url)

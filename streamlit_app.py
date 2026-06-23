@@ -12,12 +12,27 @@ branch main, main file streamlit_app.py.
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import streamlit as st
 
 REPO = Path(__file__).resolve().parent
 SNAPSHOTS = REPO / "data" / "snapshots"
+
+# make the real engine importable: src/wtw is the package, drive it directly.
+sys.path.insert(0, str(REPO / "src"))
+from wtw.parser import paragraphs_from_text, parse_paragraphs  # noqa: E402
+from wtw.validation import check_rows  # noqa: E402
+
+FIXTURE_URL = "https://www.sec.gov/Archives/edgar/data/1045810/fixture-2026q2-8k.htm"
+
+EXAMPLE_8K = """<html><body>
+<p>NVIDIA disclosed 50000 GB200 systems for CloudCo AI Factory in this fixture paragraph.</p>
+<p>AMD disclosed 18000 MI300 accelerators for ResearchGrid Compute in this fixture paragraph.</p>
+<p>Broadcom disclosed 120000 custom accelerator wafers for Atlas Hyperscale; this edge is inferred from fixture capacity language.</p>
+<p>Intel disclosed 9000 custom accelerator wafers for Public Sector Compute Reserve in this fixture paragraph.</p>
+</body></html>"""
 
 
 def load_rows() -> tuple[list[dict], str]:
@@ -103,8 +118,97 @@ if shown:
         f"evidence: {top.get('evidence_url')}"
     )
 
+st.divider()
+
+# ── interactive: drive the real parser + gate on your own 8-K text ──────────
+st.subheader("parse + gate your own 8-K text")
+st.caption(
+    "paste 8-K-style commitment paragraphs below. the page runs the *real* engine "
+    "(`wtw.parser.parse_paragraphs` then `wtw.validation.check_rows`) on your input — "
+    "the same extraction and gate the build pipeline uses — and shows which edges it "
+    "pulled out and whether they pass the snapshot gate, with the reason for each check. "
+    "no lookup, no hardcoded answer."
+)
+st.caption(
+    "each `<p>` paragraph is matched against: "
+    "`<From> disclosed <qty> <GB200 systems|MI300 accelerators|custom accelerator wafers> "
+    "for <To> in this fixture paragraph.` — add the word **inferred** to a paragraph to "
+    "mark that edge inferred (the gate caps inferred edges at 30% of a snapshot)."
+)
+
+user_quarter = st.text_input("quarter label", value="2026q2")
+user_html = st.text_area(
+    "8-K paragraphs (html with <p> tags)",
+    value=EXAMPLE_8K,
+    height=220,
+    help="pre-filled with the committed fixture — edit it, add/remove paragraphs, then re-run.",
+)
+
+if st.button("parse + validate", type="primary"):
+    paragraphs = paragraphs_from_text(user_html)
+    edges = parse_paragraphs(paragraphs, user_quarter.strip() or "adhoc", f"{FIXTURE_URL}")
+    rows = [edge.to_dict() for edge in edges]
+
+    pc1, pc2, pc3 = st.columns(3)
+    pc1.metric("paragraphs", len(paragraphs))
+    pc2.metric("edges extracted", len(edges))
+    matched_inferred = sum(1 for r in rows if r.get("inferred"))
+    pc3.metric("inferred", matched_inferred)
+
+    if not edges:
+        st.warning(
+            "the real parser extracted 0 edges — no paragraph matched the commitment "
+            "pattern. check the units (GB200 systems / MI300 accelerators / custom "
+            "accelerator wafers) and the `... for <To> in this fixture paragraph.` ending."
+        )
+    else:
+        st.markdown("**edges the real parser extracted from your text:**")
+        st.dataframe(
+            [
+                {
+                    "edge_id": r["edge_id"],
+                    "from": r["from_entity"],
+                    "to": r["to_entity"],
+                    "flow": r["flow_kind"],
+                    "quantity": r["quantity"],
+                    "unit": r["quantity_unit"],
+                    "confidence": f"{r['confidence_low']:.2f}-{r['confidence_high']:.2f}",
+                    "status": "inferred" if r["inferred"] else "disclosed",
+                }
+                for r in rows
+            ],
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    # drive the real gate on the extracted rows
+    results = check_rows(rows)
+    passed_all = all(r["passed"] for r in results)
+    if passed_all:
+        st.success("GATE PASSED — this snapshot would be accepted by `validate_snapshot`.")
+    else:
+        st.error("GATE FAILED — `validate_snapshot` would reject this snapshot. see why below.")
+
+    st.markdown("**gate checks (the real `check_rows` engine):**")
+    st.dataframe(
+        [
+            {
+                "check": r["check"],
+                "result": "pass" if r["passed"] else "FAIL",
+                "why": r["detail"],
+            }
+            for r in results
+        ],
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    with st.expander("raw extracted edges (jsonl, exactly what the gate saw)"):
+        st.code("\n".join(json.dumps(r, sort_keys=True) for r in rows) or "(no edges)", language="json")
+
 st.caption(
     "v0.1 ships one EDGAR fixture quarter. the parser, model, and validation live in "
-    "`src/wtw/`; this page reads the committed `data/snapshots/*.jsonl`. "
+    "`src/wtw/`; the snapshot view above reads the committed `data/snapshots/*.jsonl`, "
+    "and the section below it drives those same `src/wtw/` functions live on your input. "
     "repo: github.com/AthenaTheOwl/wafer-to-watt"
 )
