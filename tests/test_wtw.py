@@ -49,3 +49,20 @@ def test_cli_builds_snapshot_and_report() -> None:
 def test_inferred_share_gate() -> None:
     rows = read_jsonl(ROOT / "data" / "snapshots" / "2026q2.jsonl")
     assert sum(1 for row in rows if row["inferred"]) / len(rows) <= 0.30
+
+
+def test_cli_show_prints_ranked_snapshot() -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", "wtw", "show"],
+        cwd=ROOT,
+        text=True,
+        encoding="utf-8",
+        capture_output=True,
+        check=True,
+    )
+    out = result.stdout
+    assert "accelerator commitment snapshot" in out
+    assert "4 edge(s)" in out
+    assert "strongest edge:" in out
+    # disclosed edges must rank above the single inferred one
+    assert out.index("NVIDIA") < out.index("Broadcom")

@@ -36,17 +36,38 @@ v0.1 shipped and runs end to end. The entry command `python wtw.py validate` run
 
 ## How to run
 
-Placeholder. Run commands will land in spec `0002-edgar-pipeline`.
-The shape will be:
+The v0.1 CLI has three verbs, all offline against a committed EDGAR
+8-K fixture:
 
 ```powershell
-uv sync
-uv run wtw fetch 8k --tickers NVDA,AVGO,AMD,INTC --since 2026-04-01
-uv run wtw extract commitments data/raw/edgar/
-uv run wtw graph build --quarter 2026q3
-uv run wtw render report --quarter 2026q3
-uv run wtw eval citation-faithfulness
+python -m wtw show                  # ranked, readable view of the latest snapshot
+python -m wtw build --quarter 2026q2  # re-parse the fixture -> snapshot + report
+python -m wtw validate              # gate every snapshot (evidence anchors, inferred share)
 ```
+
+`show` reads `data/snapshots/2026q2.jsonl` and prints the commitment
+edges ranked disclosed-first by confidence then quantity, with a
+one-line headline naming the strongest edge.
+
+## live demo
+
+An interactive card-by-card view of the same committed snapshot:
+
+```powershell
+pip install -r requirements.txt
+streamlit run streamlit_app.py
+```
+
+`streamlit_app.py` reads `data/snapshots/*.jsonl` directly (paths
+relative to the file, no network, no secrets): title + caption, edge
+/ disclosed / inferred metrics, a flow-kind filter, a ranked edge
+table, and a headline callout for the strongest edge.
+
+Deploy on Streamlit Community Cloud -> New app -> repo
+`AthenaTheOwl/wafer-to-watt`, branch `main`, main file
+`streamlit_app.py`.
+
+<!-- live url: https://share.streamlit.io/... (fill in after first deploy) -->
 
 ## Layout
 
