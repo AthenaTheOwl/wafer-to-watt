@@ -31,9 +31,8 @@ Bucket: ai-infra. Category: ai-infra. Brand prefix: `WTW`.
 
 ## Status
 
-v0 scaffold. No implementation yet. The first PR after the scaffold
-lands the EDGAR 8-K parser and the commitments graph schema; see
-`docs/first-pr.md`.
+
+v0.1 shipped and runs end to end. The entry command `python wtw.py validate` runs. See `specs/0002-design/` for the v0.1 scope and `STATUS.md` (where present) for the current state and next-feature queue.
 
 ## How to run
 
