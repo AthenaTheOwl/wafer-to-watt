@@ -1,43 +1,26 @@
-# WaferToWatt
+# wafer-to-watt
 
-Quarterly snapshot mapping every disclosed accelerator commitment
-(NVDA, AVGO, AMD, Intel) to known and inferred CoWoS share and HBM
-stack count, via citation-faithful EDGAR extraction.
+Nvidia ships 50,000 GB200 systems to one buyer. Broadcom's 120,000 custom-accelerator
+wafers, by contrast, are inferred from a channel check — nobody signed for them on the
+record. wafer-to-watt is the ledger that keeps those two facts in different columns.
 
-## What this is
+## What it does
 
-CoWoS sold out into 2026. HBM is allocated through 2027. Anthropic,
-OpenAI, xAI, and Meta are making multi-billion-dollar bets on the
-same scarce silicon slots. Nobody publishes who got what in a
-citation-faithful structured way. Sell-side notes paraphrase the
-same channel checks; SemiAnalysis runs unstructured prose.
+CoWoS is sold out into 2026 and HBM is allocated through 2027, so the labs placing
+multi-billion-dollar accelerator orders are all reaching for the same scarce silicon.
+Who actually got which slots is buried in 8-Ks and earnings transcripts. Sell-side
+notes paraphrase the same channel checks; the structured ground truth doesn't exist in
+one place.
 
-WaferToWatt is the structured ground-truth layer. Every public
-accelerator commitment from 8-Ks and earnings transcripts gets
-parsed into a typed graph with confidence intervals on each edge.
-Every edge has a SEC URL anchor or earnings-transcript timestamp.
-Quarterly publication, tied to earnings season.
+wafer-to-watt parses every public accelerator commitment into a typed graph: who is
+buying what from whom, how much, and how sure we are. A disclosed edge carries an SEC
+URL anchor. An inferred edge carries a lower confidence band and says so. The line
+between a filing and a rumor is the whole product, so the schema refuses to let them
+blur. v0.1 ships one quarter as a checked-in snapshot.
 
-Bucket: ai-infra. Category: ai-infra. Brand prefix: `WTW`.
+## Try it
 
-## Who this is for
-
-- Sell-side semis analysts at GS, MS, JPM as a ground-truth layer
-  they can cite.
-- AI-lab capacity planners.
-- Corp-dev and strategy teams at AVGO, AMD, Intel.
-- Sovereign AI program managers (UAE G42, Saudi HUMAIN, EU AI
-  factories).
-
-## Status
-
-
-v0.1 shipped and runs end to end. The entry command `python wtw.py validate` runs. See `specs/0002-design/` for the v0.1 scope and `STATUS.md` (where present) for the current state and next-feature queue.
-
-## How to run
-
-The v0.1 CLI has three verbs, all offline against a committed EDGAR
-8-K fixture:
+The CLI has three verbs, all offline against a committed EDGAR 8-K fixture:
 
 ```powershell
 python -m wtw show                  # ranked, readable view of the latest snapshot
@@ -45,11 +28,28 @@ python -m wtw build --quarter 2026q2  # re-parse the fixture -> snapshot + repor
 python -m wtw validate              # gate every snapshot (evidence anchors, inferred share)
 ```
 
-`show` reads `data/snapshots/2026q2.jsonl` and prints the commitment
-edges ranked disclosed-first by confidence then quantity, with a
-one-line headline naming the strongest edge.
+`show` reads `data/snapshots/2026q2.jsonl` and prints the commitment edges ranked
+disclosed-first by confidence then quantity, with a one-line headline naming the
+strongest edge:
 
-## live demo
+```
+wafer-to-watt — accelerator commitment snapshot, 2026q2
+4 edge(s): 3 disclosed, 1 inferred, ranked disclosed-first by confidence then quantity
+
+from       to                         flow                quantity  unit                              conf  status
+------------------------------------------------------------------------------------------------------------------
+NVIDIA     CloudCo AI Factory         accelerator_commit    50,000  GB200 systems              0.90-0.98  disclosed
+AMD        ResearchGrid Compute       accelerator_commit    18,000  MI300 accelerators         0.90-0.98  disclosed
+Intel      Public Sector Compute Rese wafer_start            9,000  custom accelerator wafers  0.90-0.98  disclosed
+Broadcom   Atlas Hyperscale           wafer_start          120,000  custom accelerator wafers  0.70-0.88  inferred
+
+strongest edge: NVIDIA -> CloudCo AI Factory — 50,000 GB200 systems (disclosed, confidence 0.90-0.98). evidence: https://www.sec.gov/Archives/edgar/data/1045810/fixture-2026q2-8k.htm#p1
+```
+
+The disclosed rows sit at the top with their evidence anchors. The inferred row sits at
+the bottom with a wider band, where it belongs.
+
+## Live demo
 
 An interactive card-by-card view of the same committed snapshot:
 
@@ -58,51 +58,36 @@ pip install -r requirements.txt
 streamlit run streamlit_app.py
 ```
 
-`streamlit_app.py` reads `data/snapshots/*.jsonl` directly (paths
-relative to the file, no network, no secrets): title + caption, edge
-/ disclosed / inferred metrics, a flow-kind filter, a ranked edge
-table, and a headline callout for the strongest edge.
+`streamlit_app.py` reads `data/snapshots/*.jsonl` directly (paths relative to the file,
+no network, no secrets): title and caption, edge / disclosed / inferred metrics, a
+flow-kind filter, a ranked edge table, and a headline callout for the strongest edge.
 
-Deploy on Streamlit Community Cloud -> New app -> repo
-`AthenaTheOwl/wafer-to-watt`, branch `main`, main file
-`streamlit_app.py`.
+Deploy on Streamlit Community Cloud -> New app -> repo `AthenaTheOwl/wafer-to-watt`,
+branch `main`, main file `streamlit_app.py`.
 
 <!-- live url: https://share.streamlit.io/... (fill in after first deploy) -->
+
+## How it connects
+
+- [chip-supply-chain-map](https://github.com/AthenaTheOwl/chip-supply-chain-map) is the
+  parent graph; this repo narrows to the accelerator-commitment edges.
+- [grid-silicon](https://github.com/AthenaTheOwl/grid-silicon) scores the grid side of
+  the same demand curve — phantom megawatts where this counts phantom wafers.
+- [fab-risk-radar](https://github.com/AthenaTheOwl/fab-risk-radar) shares the
+  evidence-pipeline pattern: every edge anchored to a source or marked inferred.
 
 ## Layout
 
 ```
-wafer-to-watt/
-  AGENTS.md
-  LICENSE
-  README.md
-  specs/
-    0001-foundation/
-      requirements.md
-      design.md
-      tasks.md
-      acceptance.md
-  docs/
-    first-pr.md
-  src/
-    extraction/         # edgar_8k_parser, earnings_transcript
-    graph/              # commitments graph builder
-    render/             # cytoscape_export, report template
-  data/
-    raw/                # cached EDGAR filings (gitignored)
-    snapshots/          # 2026q3.parquet etc (checked in)
-  reports/              # checked-in quarterly markdown + PDF
-  eval/                 # citation_faithfulness.py
-  decisions/            # DEC-WTW-* architectural choices
+src/wtw/          parser, models, report, validation, cli
+data/snapshots/   2026q2.jsonl — the one quarter v0.1 ships
+data/raw/         cached EDGAR filings (gitignored)
+reports/          checked-in quarterly markdown
+schemas/  specs/  decisions/  tests/  docs/
 ```
-
-## Compounds with
-
-- `chip-supply-chain-map` is the parent graph; this repo specializes
-  to accelerator-commitment edges.
-- GridSilicon for silicon-side vs grid-side fusion.
-- FabRiskRADAR shares the evidence-pipeline pattern.
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
+</content>
+</invoke>
