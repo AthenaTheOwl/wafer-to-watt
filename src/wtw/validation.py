@@ -8,9 +8,14 @@ from typing import Any
 def read_jsonl(path: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     with path.open(encoding="utf-8") as handle:
-        for line in handle:
+        for n, line in enumerate(handle, start=1):
             if line.strip():
-                rows.append(json.loads(line))
+                # a snapshot arg can point at any file; surface the line so a
+                # non-JSONL input fails with a locatable message, not a traceback.
+                try:
+                    rows.append(json.loads(line))
+                except json.JSONDecodeError as err:
+                    raise ValueError(f"{path}: not valid JSONL at line {n}") from err
     return rows
 
 

@@ -16,6 +16,13 @@ SNAPSHOTS_DIR = ROOT / "data" / "snapshots"
 
 def build_snapshot(quarter: str) -> tuple[Path, Path]:
     fixture_path = ROOT / "data" / "raw" / "edgar" / f"{quarter}_8k_fixture.html"
+    # --quarter selects among shipped fixtures, so a typo lands here; match the
+    # show path and exit clean instead of a raw FileNotFoundError.
+    if not fixture_path.is_file():
+        raise SystemExit(
+            f"no fixture for quarter {quarter} at {fixture_path.relative_to(ROOT).as_posix()} "
+            f"— expected data/raw/edgar/{quarter}_8k_fixture.html"
+        )
     edges = parse_commitments(fixture_path, quarter, FIXTURE_URL)
     snapshot_path = ROOT / "data" / "snapshots" / f"{quarter}.jsonl"
     report_path = ROOT / "reports" / f"{quarter}-allocations.md"
@@ -103,7 +110,10 @@ def main(argv: list[str] | None = None) -> int:
         path = Path(args.snapshot) if args.snapshot else latest_snapshot()
         if path is None or not path.is_file():
             raise SystemExit("no snapshot found under data/snapshots/*.jsonl — run `build` first")
-        return show_snapshot(path)
+        try:
+            return show_snapshot(path)
+        except ValueError as err:
+            raise SystemExit(str(err)) from err
     if args.command == "build":
         snapshot, report = build_snapshot(args.quarter)
         print(
@@ -116,7 +126,10 @@ def main(argv: list[str] | None = None) -> int:
             )
         )
         return 0
-    validate_all()
+    try:
+        validate_all()
+    except ValueError as err:
+        raise SystemExit(str(err)) from err
     print("valid: snapshots")
     return 0
 
