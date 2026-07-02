@@ -89,5 +89,3 @@ schemas/  specs/  decisions/  tests/  docs/
 ## License
 
 MIT. See [LICENSE](LICENSE).
-</content>
-</invoke>
