@@ -86,6 +86,17 @@ reports/          checked-in quarterly markdown
 schemas/  specs/  decisions/  tests/  docs/
 ```
 
+## Limitations
+
+The extraction pass is not a general 8-K parser. `src/wtw/parser.py` uses the
+`PATTERN` regex to extract one synthetic fixture sentence template:
+`disclosed ... for ... in this fixture paragraph`, with fixed units and simple
+entity names. Real 8-K prose uses varied verbs, passive constructions, tables,
+legal names, and product names, so this regex would not extract those
+commitments. The schema, validation, confidence-band, and report machinery are
+real and independent of that fixture regex; generalized extraction is future
+work.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
