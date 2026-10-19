@@ -1,7 +1,7 @@
 # wafer-to-watt
 
-Nvidia ships 50,000 GB200 systems to one buyer. Broadcom's 120,000 custom-accelerator
-wafers, by contrast, are inferred from a channel check — nobody signed for them on the
+Nvidia commits 50,000 GB200 systems to one buyer. Broadcom's 120,000 custom-accelerator
+wafers, by contrast, are inferred from capacity language — nobody signed for them on the
 record. wafer-to-watt is the ledger that keeps those two facts in different columns.
 
 ## What it does
