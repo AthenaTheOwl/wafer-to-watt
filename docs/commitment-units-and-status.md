@@ -11,4 +11,3 @@ The next proposed fixture uses one commitment that appears in two filings and is
 ## References
 
 - https://www.sec.gov/structureddata/osd-inline-xbrl.html
-- https://github.com/3orionkings/ai-product-team/blob/main/workflows/process-change.md
