@@ -35,13 +35,14 @@ python -m wtw validate              # gate every snapshot (evidence anchors, inf
 ```
 
 `show` reads `data/snapshots/2026q2.jsonl` and prints the commitment edges ranked
-disclosed-first by confidence then quantity, with a one-line headline naming the
-strongest edge:
+disclosed-first by confidence. Quantity orders edges only within one unit: 50,000
+systems and 9,000 wafers are not comparable numbers. The headline names the strongest
+edge, or states the tie and lists the tied edges when their units differ:
 
 ```
 wafer-to-watt — accelerator commitment snapshot, 2026q2
 illustrative fixture data: vendors, buyers, quantities and evidence anchors are synthetic, not real disclosures
-4 edge(s): 3 disclosed, 1 inferred, ranked disclosed-first by confidence then quantity
+4 edge(s): 3 disclosed, 1 inferred, ranked disclosed-first by confidence; quantity orders edges only within a unit
 
 from       to                         flow                quantity  unit                              conf  status
 ------------------------------------------------------------------------------------------------------------------
@@ -50,11 +51,16 @@ Vendor B   ResearchGrid Compute       accelerator_commit    18,000  MI300 accele
 Vendor D   Public Sector Compute Rese wafer_start            9,000  custom accelerator wafers  0.90-0.98  disclosed
 Vendor C   Atlas Hyperscale           wafer_start          120,000  custom accelerator wafers  0.70-0.88  inferred
 
-strongest edge: Vendor A -> CloudCo AI Factory — 50,000 GB200 systems (disclosed, confidence 0.90-0.98). evidence: https://example.invalid/fixtures/edgar/2026q2_8k_fixture.html#p1
+strongest edge: tie — 3 disclosed edges share the top confidence 0.90-0.98; their quantities are in different units, so none outranks the others:
+  Vendor A -> CloudCo AI Factory — 50,000 GB200 systems (disclosed, confidence 0.90-0.98). evidence: https://example.invalid/fixtures/edgar/2026q2_8k_fixture.html#p1
+  Vendor B -> ResearchGrid Compute — 18,000 MI300 accelerators (disclosed, confidence 0.90-0.98). evidence: https://example.invalid/fixtures/edgar/2026q2_8k_fixture.html#p2
+  Vendor D -> Public Sector Compute Reserve — 9,000 custom accelerator wafers (disclosed, confidence 0.90-0.98). evidence: https://example.invalid/fixtures/edgar/2026q2_8k_fixture.html#p4
 ```
 
 The disclosed rows sit at the top with their evidence anchors. The inferred row sits at
-the bottom with a wider band, where it belongs.
+the bottom with a wider band, where it belongs. The three disclosed rows tie on
+confidence and come in three units, so none outranks the others and the headline lists
+all three.
 
 ## Live demo
 
@@ -68,7 +74,7 @@ streamlit run streamlit_app.py
 `streamlit_app.py` reads `data/snapshots/*.jsonl` directly (paths relative to the file,
 no network, no secrets): title and caption, an illustrative-data banner for fixture
 rows, edge / disclosed / inferred metrics, a flow-kind filter, a ranked edge table, and
-a headline callout for the strongest edge.
+a headline callout for the strongest edge (or the tied edges).
 
 Deploy on Streamlit Community Cloud -> New app -> repo `AthenaTheOwl/wafer-to-watt`,
 branch `main`, main file `streamlit_app.py`.

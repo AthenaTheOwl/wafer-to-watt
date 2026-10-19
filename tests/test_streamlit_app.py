@@ -21,3 +21,13 @@ def test_app_labels_fixture_snapshot_illustrative() -> None:
     at = _run()
     assert at.subheader[0].value.endswith("(illustrative)")
     assert ILLUSTRATIVE_NOTE in [w.value for w in at.warning]
+
+
+def test_app_states_the_strongest_edge_tie_instead_of_picking_by_quantity() -> None:
+    callout = _run().info[0].value
+    assert callout.startswith("**strongest edge: tie**")
+    assert [line[2:10] for line in callout.splitlines() if line.startswith("- ")] == [
+        "Vendor A",
+        "Vendor B",
+        "Vendor D",
+    ]

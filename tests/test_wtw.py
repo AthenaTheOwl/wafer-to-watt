@@ -88,9 +88,15 @@ def test_cli_show_prints_ranked_snapshot() -> None:
     assert "accelerator commitment snapshot" in out
     assert ILLUSTRATIVE_NOTE in out
     assert "4 edge(s)" in out
-    assert "strongest edge:" in out
     # disclosed edges must rank above the single inferred one
     assert out.index("Vendor A") < out.index("Vendor C")
+    # the three disclosed edges tie on confidence and their units differ, so
+    # no raw quantity picks a winner: the tie is stated and each edge listed
+    headline = out.split("strongest edge: ", 1)[1]
+    assert headline.startswith("tie — 3 disclosed edges")
+    for vendor in ("Vendor A", "Vendor B", "Vendor D"):
+        assert f"  {vendor} -> " in headline
+    assert "Vendor C" not in headline
 
 
 def test_cli_show_labels_only_fixture_rows_illustrative(tmp_path: Path) -> None:

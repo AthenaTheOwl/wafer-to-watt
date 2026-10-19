@@ -23,6 +23,7 @@ SNAPSHOTS = REPO / "data" / "snapshots"
 # make the real engine importable: src/wtw is the package, drive it directly.
 sys.path.insert(0, str(REPO / "src"))
 from wtw.parser import paragraphs_from_text, parse_paragraphs  # noqa: E402
+from wtw.ranking import describe_edge, describe_tie, rank_rows, strongest_edges  # noqa: E402
 from wtw.report import ILLUSTRATIVE_NOTE  # noqa: E402
 from wtw.validation import check_rows  # noqa: E402
 
@@ -84,16 +85,9 @@ chosen = st.multiselect(
     help="accelerator_commit = systems/accelerators; wafer_start = wafer allocation",
 )
 
-shown = [r for r in rows if r.get("flow_kind") in chosen]
-# rank disclosed-first, then by confidence midpoint, then quantity
-shown.sort(
-    key=lambda r: (
-        not r.get("inferred", False),
-        (float(r["confidence_low"]) + float(r["confidence_high"])) / 2,
-        float(r.get("quantity", 0)),
-    ),
-    reverse=True,
-)
+# rank disclosed-first, then by confidence midpoint; quantity orders edges only
+# within a unit, since the units are not comparable
+shown = rank_rows([r for r in rows if r.get("flow_kind") in chosen])
 
 st.dataframe(
     [
@@ -113,14 +107,13 @@ st.dataframe(
     hide_index=True,
 )
 
-if shown:
-    top = shown[0]
+top = strongest_edges(shown)
+if len(top) == 1:
+    st.info(f"**strongest edge:** {describe_edge(top[0])}")
+elif top:
     st.info(
-        f"**strongest edge:** {top.get('from_entity')} -> {top.get('to_entity')} — "
-        f"{float(top.get('quantity', 0)):,.0f} {top.get('quantity_unit')} "
-        f"({'inferred' if top.get('inferred') else 'disclosed'}, "
-        f"confidence {float(top['confidence_low']):.2f}-{float(top['confidence_high']):.2f}). "
-        f"evidence: {top.get('evidence_url')}"
+        f"**strongest edge: tie** — {describe_tie(top)}:\n\n"
+        + "\n".join(f"- {describe_edge(r)}" for r in top)
     )
 
 st.divider()

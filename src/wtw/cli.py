@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from .parser import parse_commitments
+from .ranking import describe_edge, describe_tie, rank_rows, strongest_edges
 from .report import ILLUSTRATIVE_NOTE, render_report, write_jsonl
 from .validation import read_jsonl, validate_snapshot
 
@@ -53,16 +54,9 @@ def show_snapshot(path: Path) -> int:
     if not rows:
         print(f"snapshot {path.name} has no edges")
         return 0
-    # rank by quantity within flow kind is unit-incomparable, so rank by confidence
-    # midpoint then quantity; disclosed (not inferred) outranks inferred.
-    rows.sort(
-        key=lambda r: (
-            not r.get("inferred", False),
-            (float(r["confidence_low"]) + float(r["confidence_high"])) / 2,
-            float(r["quantity"]),
-        ),
-        reverse=True,
-    )
+    # quantities in different units are not comparable, so rank disclosed-first by
+    # confidence and let quantity order edges only within a unit.
+    rows = rank_rows(rows)
     quarter = rows[0].get("quarter", path.stem)
     disclosed = sum(1 for r in rows if not r.get("inferred"))
     inferred = len(rows) - disclosed
@@ -71,7 +65,7 @@ def show_snapshot(path: Path) -> int:
         print(ILLUSTRATIVE_NOTE)
     print(
         f"{len(rows)} edge(s): {disclosed} disclosed, {inferred} inferred, "
-        f"ranked disclosed-first by confidence then quantity\n"
+        f"ranked disclosed-first by confidence; quantity orders edges only within a unit\n"
     )
     header = (
         f"{'from':<10} {'to':<26} {'flow':<18} {'quantity':>9}  "
@@ -90,14 +84,13 @@ def show_snapshot(path: Path) -> int:
             f"{float(r['confidence_low']):.2f}-{float(r['confidence_high']):.2f}  "
             f"{status}"
         )
-    top = rows[0]
-    print(
-        f"\nstrongest edge: {top.get('from_entity')} -> {top.get('to_entity')} — "
-        f"{float(top.get('quantity', 0)):,.0f} {top.get('quantity_unit')} "
-        f"({'inferred' if top.get('inferred') else 'disclosed'}, "
-        f"confidence {float(top['confidence_low']):.2f}-{float(top['confidence_high']):.2f}). "
-        f"evidence: {top.get('evidence_url')}"
-    )
+    top = strongest_edges(rows)
+    if len(top) == 1:
+        print(f"\nstrongest edge: {describe_edge(top[0])}")
+    else:
+        print(f"\nstrongest edge: tie — {describe_tie(top)}:")
+        for row in top:
+            print(f"  {describe_edge(row)}")
     return 0
 
 
