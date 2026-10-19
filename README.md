@@ -97,10 +97,10 @@ commitments. The schema, validation, confidence-band, and report machinery are
 real and independent of that fixture regex; generalized extraction is future
 work.
 
-## License
-
-MIT. See [LICENSE](LICENSE).
-
 ## Method update
 
 [October method update: Units and disclosure status define what can be aggregated](docs/commitment-units-and-status.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).
