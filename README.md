@@ -100,3 +100,7 @@ work.
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## Method update
+
+[October method update: Units and disclosure status define what can be aggregated](docs/commitment-units-and-status.md).
