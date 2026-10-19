@@ -26,9 +26,11 @@ the rest of the pipeline.
   paragraph extraction; commitment-grammar pattern set.
 - `schemas/commitment.schema.json` — v0 edge row shape.
 - `schemas/entity.schema.json` — canonical entity row shape.
-- `tests/fixtures/edgar/nvda_2026q2_8k.html` — a real cached NVDA
-  8-K filing; small enough to commit, large enough to exercise the
-  parser's paragraph-extraction path.
+- `data/raw/edgar/2026q2_8k_fixture.html` — a synthetic
+  four-paragraph 8-K-style fixture, not a real filing: its vendors
+  (Vendor A-D), buyers and quantities are invented. Small enough to
+  commit, and enough to exercise the parser's paragraph-extraction
+  path. No real cached filing is committed.
 - `tests/test_edgar_8k_parser.py` — runs the parser on the fixture,
   asserts the expected commitment candidates are emitted and that
   each candidate carries a `source_url` anchored to the fixture.
