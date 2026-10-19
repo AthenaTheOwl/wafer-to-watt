@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import math
 from pathlib import Path
 from typing import Any
 
@@ -61,25 +60,23 @@ def check_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         }
     )
 
-    inverted: list[str] = []
+    malformed: list[str] = []
     for row in rows:
-        try:
-            low, high = row["confidence_low"], row["confidence_high"]
-            if (
-                isinstance(low, bool) or isinstance(high, bool)
-                or not math.isfinite(float(low)) or not math.isfinite(float(high))
-                or not 0 <= float(low) <= float(high) <= 1
-            ):
-                inverted.append(str(row.get("edge_id") or "?"))
-        except (KeyError, TypeError, ValueError, OverflowError):
-            inverted.append(str(row.get("edge_id") or "?"))
+        low, high = row.get("confidence_low"), row.get("confidence_high")
+        # JSON numbers only, as the schema requires: bool is an int subclass and
+        # numeric strings would otherwise pass float(). The range check also
+        # rejects nan and inf, since every comparison with nan is False.
+        if not all(
+            isinstance(v, (int, float)) and not isinstance(v, bool) for v in (low, high)
+        ) or not 0 <= low <= high <= 1:
+            malformed.append(str(row.get("edge_id") or "?"))
     results.append(
         {
-            "check": "confidence interval not inverted",
-            "passed": not inverted,
-            "detail": "all intervals finite and bounded (0 <= low <= high <= 1)"
-            if not inverted
-            else f"inverted/malformed on: {', '.join(inverted)}",
+            "check": "confidence interval well-formed in [0, 1]",
+            "passed": not malformed,
+            "detail": "all intervals numeric and bounded (0 <= low <= high <= 1)"
+            if not malformed
+            else f"non-numeric, out-of-range or inverted on: {', '.join(malformed)}",
         }
     )
 

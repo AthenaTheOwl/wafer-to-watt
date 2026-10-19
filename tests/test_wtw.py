@@ -129,11 +129,11 @@ def test_check_rows_flags_missing_evidence_url() -> None:
 
 def test_check_rows_flags_inverted_confidence() -> None:
     results = check_rows([_row(confidence_low=0.99, confidence_high=0.80)])
-    assert _check(results, "confidence interval not inverted")["passed"] is False
+    assert _check(results, "confidence interval well-formed in [0, 1]")["passed"] is False
 
 
 def test_check_rows_flags_non_numeric_confidence() -> None:
     row = _row()
     del row["confidence_high"]
     results = check_rows([row])
-    assert _check(results, "confidence interval not inverted")["passed"] is False
+    assert _check(results, "confidence interval well-formed in [0, 1]")["passed"] is False
