@@ -5,6 +5,13 @@ from pathlib import Path
 
 from .models import CommitmentEdge
 
+# Shown wherever fixture rows are displayed (`wtw show`, Streamlit) so the
+# invented edges are never read as real disclosures; the report says the same.
+ILLUSTRATIVE_NOTE = (
+    "illustrative fixture data: vendors, buyers, quantities and evidence anchors "
+    "are synthetic, not real disclosures"
+)
+
 
 def write_jsonl(path: Path, rows: list[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -17,9 +24,12 @@ def render_report(path: Path, edges: list[CommitmentEdge]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     inferred_count = sum(1 for edge in edges if edge.inferred)
     lines = [
-        f"# WaferToWatt allocations - {edges[0].quarter}",
+        f"# WaferToWatt allocations - {edges[0].quarter} (illustrative fixture)",
         "",
-        "Fixture-backed accelerator commitment edges parsed from cached filing-style text.",
+        "**Illustrative fixture data.** The vendors, buyers, quantities and evidence anchors",
+        "below are synthetic, not real disclosures.",
+        "",
+        "Fixture-backed accelerator commitment edges parsed from synthetic filing-style text.",
         "The report is a pipeline proof, not a live allocation claim.",
         "",
         "## edges",

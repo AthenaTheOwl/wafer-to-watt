@@ -6,11 +6,13 @@ import sys
 from pathlib import Path
 
 from .parser import parse_commitments
-from .report import render_report, write_jsonl
+from .report import ILLUSTRATIVE_NOTE, render_report, write_jsonl
 from .validation import read_jsonl, validate_snapshot
 
 ROOT = Path(__file__).resolve().parents[2]
-FIXTURE_URL = "https://www.sec.gov/Archives/edgar/data/1045810/fixture-2026q2-8k.htm"
+# The fixture is synthetic, so its evidence anchor must not look like a real
+# filing: .invalid is a reserved TLD (RFC 2606) and can never resolve.
+FIXTURE_URL = "https://example.invalid/fixtures/edgar/2026q2_8k_fixture.html"
 SNAPSHOTS_DIR = ROOT / "data" / "snapshots"
 
 
@@ -65,6 +67,8 @@ def show_snapshot(path: Path) -> int:
     disclosed = sum(1 for r in rows if not r.get("inferred"))
     inferred = len(rows) - disclosed
     print(f"wafer-to-watt — accelerator commitment snapshot, {quarter}")
+    if any(r.get("extraction_mode") == "fixture" for r in rows):
+        print(ILLUSTRATIVE_NOTE)
     print(
         f"{len(rows)} edge(s): {disclosed} disclosed, {inferred} inferred, "
         f"ranked disclosed-first by confidence then quantity\n"

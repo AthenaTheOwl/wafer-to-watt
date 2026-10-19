@@ -1,10 +1,10 @@
 """wafer-to-watt — live demo (Streamlit Community Cloud).
 
 Reads the committed snapshot under data/snapshots/*.jsonl and shows the
-accelerator-commitment edges parsed from a cached EDGAR 8-K fixture: who
-committed how much of which silicon to whom, with confidence intervals and a
-SEC URL anchor on every edge. No network, no secrets — runs entirely off the
-committed snapshot.
+accelerator-commitment edges parsed from a synthetic 8-K-style fixture: who
+committed how much of which silicon to whom, with confidence intervals and an
+evidence anchor on every edge. The fixture rows are illustrative, not real
+disclosures. No network, no secrets — runs entirely off the committed snapshot.
 
 Deploy: Streamlit Community Cloud -> New app -> repo AthenaTheOwl/wafer-to-watt,
 branch main, main file streamlit_app.py.
@@ -23,15 +23,17 @@ SNAPSHOTS = REPO / "data" / "snapshots"
 # make the real engine importable: src/wtw is the package, drive it directly.
 sys.path.insert(0, str(REPO / "src"))
 from wtw.parser import paragraphs_from_text, parse_paragraphs  # noqa: E402
+from wtw.report import ILLUSTRATIVE_NOTE  # noqa: E402
 from wtw.validation import check_rows  # noqa: E402
 
-FIXTURE_URL = "https://www.sec.gov/Archives/edgar/data/1045810/fixture-2026q2-8k.htm"
+# synthetic fixture anchor; .invalid is a reserved TLD and never resolves
+FIXTURE_URL = "https://example.invalid/fixtures/edgar/2026q2_8k_fixture.html"
 
 EXAMPLE_8K = """<html><body>
-<p>NVIDIA disclosed 50000 GB200 systems for CloudCo AI Factory in this fixture paragraph.</p>
-<p>AMD disclosed 18000 MI300 accelerators for ResearchGrid Compute in this fixture paragraph.</p>
-<p>Broadcom disclosed 120000 custom accelerator wafers for Atlas Hyperscale; this edge is inferred from fixture capacity language.</p>
-<p>Intel disclosed 9000 custom accelerator wafers for Public Sector Compute Reserve in this fixture paragraph.</p>
+<p>Vendor A disclosed 50000 GB200 systems for CloudCo AI Factory in this fixture paragraph.</p>
+<p>Vendor B disclosed 18000 MI300 accelerators for ResearchGrid Compute in this fixture paragraph.</p>
+<p>Vendor C disclosed 120000 custom accelerator wafers for Atlas Hyperscale; this edge is inferred from fixture capacity language.</p>
+<p>Vendor D disclosed 9000 custom accelerator wafers for Public Sector Compute Reserve in this fixture paragraph.</p>
 </body></html>"""
 
 
@@ -51,9 +53,9 @@ def load_rows() -> tuple[list[dict], str]:
 st.set_page_config(page_title="wafer-to-watt — accelerator commitments", layout="wide")
 st.title("wafer-to-watt")
 st.caption(
-    "accelerator commitment edges parsed from a cached EDGAR 8-K fixture — who "
+    "accelerator commitment edges parsed from a synthetic 8-K-style fixture — who "
     "committed how much of which silicon to whom, each edge carrying a confidence "
-    "interval and a SEC URL anchor. a pipeline proof, not a live allocation claim."
+    "interval and an evidence anchor. a pipeline proof, not a live allocation claim."
 )
 
 rows, quarter = load_rows()
@@ -61,7 +63,10 @@ if not rows:
     st.warning("no snapshot found under data/snapshots/*.jsonl — run `python -m wtw build` first")
     st.stop()
 
-st.subheader(f"commitment snapshot — {quarter}")
+illustrative = any(r.get("extraction_mode") == "fixture" for r in rows)
+st.subheader(f"commitment snapshot — {quarter}" + (" (illustrative)" if illustrative else ""))
+if illustrative:
+    st.warning(ILLUSTRATIVE_NOTE)
 
 disclosed = sum(1 for r in rows if not r.get("inferred"))
 inferred = len(rows) - disclosed
@@ -207,7 +212,7 @@ if st.button("parse + validate", type="primary"):
         st.code("\n".join(json.dumps(r, sort_keys=True) for r in rows) or "(no edges)", language="json")
 
 st.caption(
-    "v0.1 ships one EDGAR fixture quarter. the parser, model, and validation live in "
+    "v0.1 ships one illustrative fixture quarter. the parser, model, and validation live in "
     "`src/wtw/`; the snapshot view above reads the committed `data/snapshots/*.jsonl`, "
     "and the section below it drives those same `src/wtw/` functions live on your input. "
     "repo: github.com/AthenaTheOwl/wafer-to-watt"
