@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -63,15 +64,20 @@ def check_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     inverted: list[str] = []
     for row in rows:
         try:
-            if float(row["confidence_low"]) > float(row["confidence_high"]):
+            low, high = row["confidence_low"], row["confidence_high"]
+            if (
+                isinstance(low, bool) or isinstance(high, bool)
+                or not math.isfinite(float(low)) or not math.isfinite(float(high))
+                or not 0 <= float(low) <= float(high) <= 1
+            ):
                 inverted.append(str(row.get("edge_id") or "?"))
-        except (KeyError, TypeError, ValueError):
+        except (KeyError, TypeError, ValueError, OverflowError):
             inverted.append(str(row.get("edge_id") or "?"))
     results.append(
         {
             "check": "confidence interval not inverted",
             "passed": not inverted,
-            "detail": "all intervals well-formed (low <= high)"
+            "detail": "all intervals finite and bounded (0 <= low <= high <= 1)"
             if not inverted
             else f"inverted/malformed on: {', '.join(inverted)}",
         }
