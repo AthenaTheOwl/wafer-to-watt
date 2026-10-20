@@ -69,3 +69,24 @@ def test_rank_rows_orders_quantity_only_inside_a_unit() -> None:
 
 def test_empty_snapshot_has_no_strongest_edge() -> None:
     assert strongest_edges([]) == []
+
+
+def test_quantity_still_orders_same_unit_edges_inside_a_mixed_unit_tie() -> None:
+    systems = _edge("systems", 50_000, "GB200 systems")
+    small = _edge("small", 9_000, "custom accelerator wafers")
+    large = _edge("large", 12_000, "custom accelerator wafers")
+    top = strongest_edges([systems, small, large])
+    assert sorted(_ids(top)) == ["large", "systems"]
+    assert "different units" in describe_tie(top)
+
+
+def test_bands_with_the_same_midpoint_tie_despite_float_rounding() -> None:
+    # (0.05+0.25)/2 and (0.10+0.20)/2 differ in the last float bit
+    a = _edge("a", 50_000, "GB200 systems", confidence_low=0.05, confidence_high=0.25)
+    b = _edge("b", 9_000, "custom accelerator wafers", confidence_low=0.10, confidence_high=0.20)
+    top = strongest_edges([a, b])
+    assert sorted(_ids(top)) == ["a", "b"]
+    assert "confidence midpoint 0.15" in describe_tie(top)
+    c = _edge("c", 1, "GB200 systems", confidence_low=0.80, confidence_high=0.90)
+    d = _edge("d", 1, "custom accelerator wafers", confidence_low=0.75, confidence_high=0.95)
+    assert sorted(_ids(strongest_edges([c, d]))) == ["c", "d"]

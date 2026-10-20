@@ -14,7 +14,9 @@ Row = dict[str, Any]
 
 
 def confidence_midpoint(row: Row) -> float:
-    return (float(row["confidence_low"]) + float(row["confidence_high"])) / 2
+    # Rounded so bands with the same real midpoint (0.80-0.90 and 0.75-0.95)
+    # compare equal instead of differing by a float rounding step.
+    return round((float(row["confidence_low"]) + float(row["confidence_high"])) / 2, 9)
 
 
 def _rank(row: Row) -> tuple[bool, float]:
@@ -40,18 +42,20 @@ def rank_rows(rows: list[Row]) -> list[Row]:
 def strongest_edges(rows: list[Row]) -> list[Row]:
     """Return the edge(s) holding the top rank.
 
-    Quantity breaks a tie only when every tied edge has the same unit, the one
-    case where it is a unit-consistent measure. Otherwise every tied edge is
-    returned, in `rank_rows` order.
+    Quantity breaks a tie only between edges that share a unit, the one case
+    where it is a unit-consistent measure: inside each unit only the largest
+    quantity (or quantities, if equal) stays. Edges left in different units are
+    all returned, in `rank_rows` order.
     """
     if not rows:
         return []
     top = max(_rank(r) for r in rows)
     tied = [r for r in rank_rows(rows) if _rank(r) == top]
-    if len({r.get("quantity_unit") for r in tied}) == 1:
-        most = max(_quantity(r) for r in tied)
-        tied = [r for r in tied if _quantity(r) == most]
-    return tied
+    most: dict[Any, float] = {}
+    for r in tied:
+        unit = r.get("quantity_unit")
+        most[unit] = max(most.get(unit, _quantity(r)), _quantity(r))
+    return [r for r in tied if _quantity(r) == most[r.get("quantity_unit")]]
 
 
 def _status(row: Row) -> str:
