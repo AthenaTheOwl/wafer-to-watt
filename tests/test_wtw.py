@@ -184,3 +184,22 @@ def test_check_rows_flags_non_numeric_confidence() -> None:
     del row["confidence_high"]
     results = check_rows([row])
     assert _check(results, "confidence interval well-formed in [0, 1]")["passed"] is False
+
+
+def test_parser_stops_the_buyer_name_at_a_sentence_period() -> None:
+    from src.wtw.parser import parse_paragraphs
+
+    edges = parse_paragraphs(
+        ["Vendor X disclosed 100 GB200 systems for Foo Corp."], "2026q2", FIXTURE_URL
+    )
+    assert [edge.to_entity for edge in edges] == ["Foo Corp"]
+
+
+def test_not_inferred_does_not_mark_an_edge_inferred() -> None:
+    from src.wtw.parser import parse_paragraphs
+
+    text = "Vendor X disclosed 100 GB200 systems for Foo in this fixture paragraph; {}."
+    disclosed = parse_paragraphs([text.format("not inferred")], "2026q2", FIXTURE_URL)
+    inferred = parse_paragraphs([text.format("inferred from capacity")], "2026q2", FIXTURE_URL)
+    assert [edge.inferred for edge in disclosed] == [False]
+    assert [edge.inferred for edge in inferred] == [True]

@@ -34,8 +34,11 @@ class ParagraphParser(HTMLParser):
 PATTERN = re.compile(
     r"(?P<from>[A-Z][A-Za-z0-9 .-]+) disclosed (?P<qty>[0-9,]+) "
     r"(?P<unit>GB200 systems|MI300 accelerators|custom accelerator wafers) "
-    r"for (?P<to>[A-Z][A-Za-z0-9 .-]+?)(?= in this fixture paragraph|;|\\.)",
+    r"for (?P<to>[A-Z][A-Za-z0-9 .-]+?)(?= in this fixture paragraph|;|\.)",
 )
+
+# "inferred" as a word, not negated: "not inferred" marks a disclosed edge
+INFERRED = re.compile(r"(?<!not )\binferred\b", re.IGNORECASE)
 
 
 def paragraphs_from_text(html: str) -> list[str]:
@@ -68,7 +71,7 @@ def parse_paragraphs(
         if "wafers" in unit:
             flow_kind = "wafer_start"
         edge_id = f"wtw-{quarter}-{index:03d}"
-        inferred = "inferred" in paragraph.lower()
+        inferred = INFERRED.search(paragraph) is not None
         edges.append(
             CommitmentEdge(
                 edge_id=edge_id,
