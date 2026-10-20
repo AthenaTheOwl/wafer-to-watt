@@ -3,6 +3,11 @@
 The literal first PR after the scaffold. Narrow scope: the EDGAR
 fetch path, the 8-K parser, and the commitment schema.
 
+Plan written at scaffold time; the shipped v0.1 differs. The parser
+landed as `src/wtw/parser.py` with tests in `tests/test_wtw.py`, the
+anchor field is `evidence_url`, and several files listed below do not
+exist yet. See the README for what v0.1 ships.
+
 ## Title
 
 `feat(WTW): EDGAR 8-K parser plus commitments schema (PR 1)`
@@ -26,9 +31,11 @@ the rest of the pipeline.
   paragraph extraction; commitment-grammar pattern set.
 - `schemas/commitment.schema.json` — v0 edge row shape.
 - `schemas/entity.schema.json` — canonical entity row shape.
-- `tests/fixtures/edgar/nvda_2026q2_8k.html` — a real cached NVDA
-  8-K filing; small enough to commit, large enough to exercise the
-  parser's paragraph-extraction path.
+- `data/raw/edgar/2026q2_8k_fixture.html` — a synthetic
+  four-paragraph 8-K-style fixture, not a real filing: its vendors
+  (Vendor A-D), buyers and quantities are invented. Small enough to
+  commit, and enough to exercise the parser's paragraph-extraction
+  path. No real cached filing is committed.
 - `tests/test_edgar_8k_parser.py` — runs the parser on the fixture,
   asserts the expected commitment candidates are emitted and that
   each candidate carries a `source_url` anchored to the fixture.

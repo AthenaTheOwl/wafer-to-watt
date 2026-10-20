@@ -23,7 +23,7 @@ jobs:
           python -m uv sync
 
       - name: pytest
-        run: python -m uv run --with pytest pytest -q
+        run: python -m uv run --with pytest --with "streamlit>=1.40" pytest -q
 
       - name: compile python surfaces
         run: |

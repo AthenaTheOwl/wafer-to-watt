@@ -1,8 +1,13 @@
 # wafer-to-watt
 
-Nvidia ships 50,000 GB200 systems to one buyer. Broadcom's 120,000 custom-accelerator
-wafers, by contrast, are inferred from a channel check — nobody signed for them on the
-record. wafer-to-watt is the ledger that keeps those two facts in different columns.
+One edge says a vendor committed 50,000 accelerator systems to a buyer, on the record.
+Another says a second vendor's 120,000 custom-accelerator wafers are inferred from
+capacity language — nobody signed for them. wafer-to-watt is the ledger that keeps those
+two kinds of claim in different columns.
+
+Both edges come from the illustrative fixture v0.1 ships, not from real filings: the
+vendors (Vendor A–D), buyers, quantities and evidence anchors in
+`data/snapshots/2026q2.jsonl` are synthetic and are not real disclosures.
 
 ## What it does
 
@@ -12,15 +17,17 @@ Who actually got which slots is buried in 8-Ks and earnings transcripts. Sell-si
 notes paraphrase the same channel checks; the structured ground truth doesn't exist in
 one place.
 
-wafer-to-watt parses every public accelerator commitment into a typed graph: who is
-buying what from whom, how much, and how sure we are. A disclosed edge carries an SEC
-URL anchor. An inferred edge carries a lower confidence band and says so. The line
-between a filing and a rumor is the whole product, so the schema refuses to let them
-blur. v0.1 ships one quarter as a checked-in snapshot.
+wafer-to-watt is built to parse public accelerator commitments into a typed graph: who
+is buying what from whom, how much, and how sure we are. Every edge carries an evidence
+URL anchor; in a live snapshot a disclosed edge's anchor is the SEC filing it came from.
+An inferred edge carries a lower confidence band and says so. The line between a filing
+and a rumor is the whole product, so the schema refuses to let them blur. v0.1 ships one
+illustrative fixture quarter as a checked-in snapshot; its edges are synthetic and its
+anchors are reserved `.invalid` placeholders, not real disclosures.
 
 ## Try it
 
-The CLI has three verbs, all offline against a committed EDGAR 8-K fixture:
+The CLI has three verbs, all offline against a committed, synthetic 8-K-style fixture:
 
 ```powershell
 python -m wtw show                  # ranked, readable view of the latest snapshot
@@ -29,25 +36,32 @@ python -m wtw validate              # gate every snapshot (evidence anchors, inf
 ```
 
 `show` reads `data/snapshots/2026q2.jsonl` and prints the commitment edges ranked
-disclosed-first by confidence then quantity, with a one-line headline naming the
-strongest edge:
+disclosed-first by confidence. Quantity orders edges only within one unit: 50,000
+systems and 9,000 wafers are not comparable numbers. The headline names the strongest
+edge, or states the tie and lists the tied edges when their units differ:
 
 ```
 wafer-to-watt — accelerator commitment snapshot, 2026q2
-4 edge(s): 3 disclosed, 1 inferred, ranked disclosed-first by confidence then quantity
+illustrative fixture data: vendors, buyers, quantities and evidence anchors are synthetic, not real disclosures
+4 edge(s): 3 disclosed, 1 inferred, ranked disclosed-first by confidence; quantity orders edges only within a unit
 
 from       to                         flow                quantity  unit                              conf  status
 ------------------------------------------------------------------------------------------------------------------
-NVIDIA     CloudCo AI Factory         accelerator_commit    50,000  GB200 systems              0.90-0.98  disclosed
-AMD        ResearchGrid Compute       accelerator_commit    18,000  MI300 accelerators         0.90-0.98  disclosed
-Intel      Public Sector Compute Rese wafer_start            9,000  custom accelerator wafers  0.90-0.98  disclosed
-Broadcom   Atlas Hyperscale           wafer_start          120,000  custom accelerator wafers  0.70-0.88  inferred
+Vendor A   CloudCo AI Factory         accelerator_commit    50,000  GB200 systems              0.90-0.98  disclosed
+Vendor B   ResearchGrid Compute       accelerator_commit    18,000  MI300 accelerators         0.90-0.98  disclosed
+Vendor D   Public Sector Compute Rese wafer_start            9,000  custom accelerator wafers  0.90-0.98  disclosed
+Vendor C   Atlas Hyperscale           wafer_start          120,000  custom accelerator wafers  0.70-0.88  inferred
 
-strongest edge: NVIDIA -> CloudCo AI Factory — 50,000 GB200 systems (disclosed, confidence 0.90-0.98). evidence: https://www.sec.gov/Archives/edgar/data/1045810/fixture-2026q2-8k.htm#p1
+strongest edge: tie — 3 disclosed edges share the top confidence 0.90-0.98; their quantities are in different units, so none outranks the others:
+  Vendor A -> CloudCo AI Factory — 50,000 GB200 systems (disclosed, confidence 0.90-0.98). evidence: https://example.invalid/fixtures/edgar/2026q2_8k_fixture.html#p1
+  Vendor B -> ResearchGrid Compute — 18,000 MI300 accelerators (disclosed, confidence 0.90-0.98). evidence: https://example.invalid/fixtures/edgar/2026q2_8k_fixture.html#p2
+  Vendor D -> Public Sector Compute Reserve — 9,000 custom accelerator wafers (disclosed, confidence 0.90-0.98). evidence: https://example.invalid/fixtures/edgar/2026q2_8k_fixture.html#p4
 ```
 
 The disclosed rows sit at the top with their evidence anchors. The inferred row sits at
-the bottom with a wider band, where it belongs.
+the bottom with a wider band, where it belongs. The three disclosed rows tie on
+confidence and come in three units, so none outranks the others and the headline lists
+all three.
 
 ## Live demo
 
@@ -59,8 +73,9 @@ streamlit run streamlit_app.py
 ```
 
 `streamlit_app.py` reads `data/snapshots/*.jsonl` directly (paths relative to the file,
-no network, no secrets): title and caption, edge / disclosed / inferred metrics, a
-flow-kind filter, a ranked edge table, and a headline callout for the strongest edge.
+no network, no secrets): title and caption, an illustrative-data banner for fixture
+rows, edge / disclosed / inferred metrics, a flow-kind filter, a ranked edge table, and
+a headline callout for the strongest edge (or the tied edges).
 
 Deploy on Streamlit Community Cloud -> New app -> repo `AthenaTheOwl/wafer-to-watt`,
 branch `main`, main file `streamlit_app.py`.
@@ -80,8 +95,8 @@ branch `main`, main file `streamlit_app.py`.
 
 ```
 src/wtw/          parser, models, report, validation, cli
-data/snapshots/   2026q2.jsonl — the one quarter v0.1 ships
-data/raw/         cached EDGAR filings (gitignored)
+data/snapshots/   2026q2.jsonl — the one illustrative fixture quarter v0.1 ships
+data/raw/         the synthetic 8-K fixture (other cached filings gitignored)
 reports/          checked-in quarterly markdown
 schemas/  specs/  decisions/  tests/  docs/
 ```
@@ -97,10 +112,10 @@ commitments. The schema, validation, confidence-band, and report machinery are
 real and independent of that fixture regex; generalized extraction is future
 work.
 
-## License
-
-MIT. See [LICENSE](LICENSE).
-
 ## Method update
 
 [October method update: Units and disclosure status define what can be aggregated](docs/commitment-units-and-status.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).

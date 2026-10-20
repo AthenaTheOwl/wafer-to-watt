@@ -10,8 +10,9 @@ already trained on `supplier-risk-rag-agent` or
 A quarterly publication tied to earnings season. The artifact is the
 checked-in quarterly report under `reports/<quarter>-allocations.md`,
 the PDF render, the snapshot parquet, and the Cytoscape JSON.
-Every edge in the graph cites a public SEC filing or earnings
-transcript by URL and timestamp.
+The intended contract: every edge in a live graph cites a public SEC
+filing or earnings transcript by URL and timestamp. The v0.1 snapshot
+is a synthetic fixture whose anchors are `.invalid` placeholders.
 
 ## Voice constraints
 
