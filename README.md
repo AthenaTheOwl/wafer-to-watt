@@ -17,12 +17,13 @@ Who actually got which slots is buried in 8-Ks and earnings transcripts. Sell-si
 notes paraphrase the same channel checks; the structured ground truth doesn't exist in
 one place.
 
-wafer-to-watt parses every public accelerator commitment into a typed graph: who is
-buying what from whom, how much, and how sure we are. A disclosed edge carries an SEC
-URL anchor. An inferred edge carries a lower confidence band and says so. The line
-between a filing and a rumor is the whole product, so the schema refuses to let them
-blur. v0.1 ships one illustrative fixture quarter as a checked-in snapshot; its edges
-and anchors are synthetic placeholders, not real disclosures.
+wafer-to-watt is built to parse public accelerator commitments into a typed graph: who
+is buying what from whom, how much, and how sure we are. Every edge carries an evidence
+URL anchor; in a live snapshot a disclosed edge's anchor is the SEC filing it came from.
+An inferred edge carries a lower confidence band and says so. The line between a filing
+and a rumor is the whole product, so the schema refuses to let them blur. v0.1 ships one
+illustrative fixture quarter as a checked-in snapshot; its edges are synthetic and its
+anchors are reserved `.invalid` placeholders, not real disclosures.
 
 ## Try it
 
