@@ -8,6 +8,7 @@ The implemented confidence gate now rejects nonfinite, boolean and out-of-range 
 
 The next proposed fixture uses one commitment that appears in two filings and is later amended. Identify the economic commitment before deciding whether to update, supplement or create another edge. Aggregate quantities only within compatible units and statuses, with an explicit conversion source if a conversion is needed. A timestamped transcript sentence supports what it says at that time; it does not by itself establish fulfillment. Keep the old snapshot when new evidence changes the interpretation.
 
-## References
+## See also
 
-- https://www.sec.gov/structureddata/osd-inline-xbrl.html
+- `src/wtw/validation.py` — the confidence gate described above.
+- `src/wtw/ranking.py` — ranking that orders quantities only within a unit.
