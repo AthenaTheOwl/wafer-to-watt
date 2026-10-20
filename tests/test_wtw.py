@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from urllib.parse import urlparse
 
+from src.wtw.cli import FIXTURE_URL
 from src.wtw.parser import paragraphs_from_html, parse_commitments
 from src.wtw.report import ILLUSTRATIVE_NOTE, render_report
 from src.wtw.validation import check_rows, read_jsonl, validate_snapshot
@@ -20,7 +21,7 @@ def test_parser_extracts_fixture_paragraphs() -> None:
 
 
 def test_parser_emits_commitment_edges() -> None:
-    edges = parse_commitments(FIXTURE, "2026q2", "https://www.sec.gov/Archives/fixture.htm")
+    edges = parse_commitments(FIXTURE, "2026q2", FIXTURE_URL)
     assert len(edges) == 4
     assert {edge.flow_kind for edge in edges} == {"accelerator_commit", "wafer_start"}
     assert sum(1 for edge in edges if edge.inferred) == 1
@@ -128,7 +129,7 @@ def test_fixture_evidence_anchors_cannot_point_at_a_real_filing() -> None:
 
 
 def test_report_body_pins_status_quantity_and_confidence(tmp_path: Path) -> None:
-    edges = parse_commitments(FIXTURE, "2026q2", "https://www.sec.gov/Archives/fixture.htm")
+    edges = parse_commitments(FIXTURE, "2026q2", FIXTURE_URL)
     report = tmp_path / "2026q2-allocations.md"
     render_report(report, edges)
     body = report.read_text(encoding="utf-8")
