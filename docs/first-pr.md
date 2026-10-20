@@ -3,6 +3,11 @@
 The literal first PR after the scaffold. Narrow scope: the EDGAR
 fetch path, the 8-K parser, and the commitment schema.
 
+Plan written at scaffold time; the shipped v0.1 differs. The parser
+landed as `src/wtw/parser.py` with tests in `tests/test_wtw.py`, the
+anchor field is `evidence_url`, and several files listed below do not
+exist yet. See the README for what v0.1 ships.
+
 ## Title
 
 `feat(WTW): EDGAR 8-K parser plus commitments schema (PR 1)`
